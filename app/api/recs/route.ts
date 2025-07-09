@@ -8,8 +8,10 @@ const openai = process.env.OPENAI_API_KEY
   : null
 
 interface RecsRequest {
+  category: string
   vibe: string
   city?: string
+  customInput?: string
 }
 
 interface ProcessedRec {
@@ -184,21 +186,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const body: RecsRequest = await request.json()
 
-    if (!body.vibe) {
-      return NextResponse.json({ error: "Vibe is required" }, { status: 400 })
+    if (!body.category || !body.vibe) {
+      return NextResponse.json({ error: "Category and vibe are required" }, { status: 400 })
     }
 
     const city = body.city || "Ciudad Victoria"
-    const vibe = body.vibe.toLowerCase()
+    const category = body.category
+    const vibe = body.vibe
+    const customInput = body.customInput || ""
 
-    // Get modifier for vibe
-    const modifier = VIBE_MODIFIERS[vibe]
+    // Import categories dynamically
+    const { getSearchModifier } = await import("@/lib/categories")
+
+    // Get the search modifier for this category and vibe
+    const modifier = getSearchModifier(category, vibe)
     if (!modifier) {
-      return NextResponse.json({ error: "Unknown vibe type" }, { status: 400 })
+      return NextResponse.json({ error: "Unknown category or vibe combination" }, { status: 400 })
     }
+
+    // Enhance search with custom input
+    const enhancedModifier = customInput ? `${modifier} that also matches: ${customInput}` : modifier
 
     let processedRecs: ProcessedRec[] = []
 
+    // Continue with existing Perplexity and GPT fallback logic...
     // Try Perplexity first
     try {
       const perplexityResponse = await fetchWithRetry("https://api.perplexity.ai/chat/completions", {
@@ -230,7 +241,7 @@ Find exactly 4 places. Use real data when available. Be specific and accurate.`,
             },
             {
               role: "user",
-              content: `Find 4 specific places in ${city} for: ${modifier}`,
+              content: `Find 4 specific places in ${city} for: ${enhancedModifier}`,
             },
           ],
           max_tokens: 1200,
@@ -253,7 +264,7 @@ Find exactly 4 places. Use real data when available. Be specific and accurate.`,
     // If Perplexity fails or returns no results, use GPT fallback
     if (processedRecs.length === 0) {
       console.log("Using GPT fallback...")
-      processedRecs = await getGPTFallback(city, modifier)
+      processedRecs = await getGPTFallback(city, enhancedModifier)
     }
 
     // Ultimate fallback if everything fails
