@@ -1,5 +1,5 @@
 {
-  "name": "@your-city-vibe/web",
+  "name": "your-city-vibe",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,8 +7,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "next": "14.0.4",
@@ -30,5 +29,8 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.17.0"
   }
 }
