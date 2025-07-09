@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ["@upstash/redis", "openai"],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,4 +14,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+module.exports = nextConfig

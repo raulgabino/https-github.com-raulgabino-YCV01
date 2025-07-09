@@ -1,27 +1,50 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# dependencies
-/node_modules
+# Testing
+coverage/
 
-# next.js
-/.next/
-/out/
+# Next.js
+.next/
+out/
 
-# production
-/build
+# Production
+build/
+dist/
 
-# debug
+# Environment variables - NEVER COMMIT THESE
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
 
-# env files
-.env*
+# IDE
+.vscode/
+.idea/
 
-# vercel
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
 .vercel
 
-# typescript
+# Misc
 *.tsbuildinfo
-next-env.d.ts
+
+# Monorepo artifacts (ensure these are ignored)
+apps/
+packages/
+turbo.json
+pnpm-workspace.yaml
+pnpm-lock.yaml

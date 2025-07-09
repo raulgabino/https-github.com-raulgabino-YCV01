@@ -1,46 +1,41 @@
 {
   "name": "your-city-vibe",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
-    "changeset": "changeset",
-    "clean": "turbo run clean",
-    "dev": "turbo run dev",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "lint": "turbo run lint",
-    "release": "turbo run build --filter=!@your-city-vibe/web && changeset publish",
-    "smoke-test": "tsx scripts/smoke.ts",
-    "test:smoke": "npm run smoke-test",
-    "type-check": "turbo run type-check",
-    "version-packages": "changeset version"
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
+    "start": "next start",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@your-city-vibe/api": "latest",
-    "@your-city-vibe/data": "latest",
+    "@upstash/redis": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
+    "openai": "latest",
     "react": "^18",
     "react-dom": "^18",
     "sonner": "latest",
     "swr": "latest",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "ws": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.1",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.0.4",
     "postcss": "^8.5",
-    "prettier": "^3.1.0",
-    "tsx": "^4.6.0",
-    "turbo": "^1.11.0",
+    "tailwindcss": "^3.3.6",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@8.10.0",
   "engines": {
     "node": ">=18.17.0"
   }

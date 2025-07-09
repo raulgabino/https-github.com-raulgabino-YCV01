@@ -1,30 +1,76 @@
-# Next.js monorepo setup
+# Your City Vibe
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+Una aplicación Next.js que descubre lugares perfectos según tu mood usando IA.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/raul-gabinos-projects/v0-next-js-monorepo-setup)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/QgVb959VcUZ)
+## 🚀 Deployment en Vercel
 
-## Overview
+1. **Clona o descarga** este proyecto
+2. **Configura las variables de entorno** en Vercel:
+   - `OPENAI_API_KEY`: Tu API key de OpenAI
+   - `SONAR_API_KEY`: Tu API key de Perplexity
+   - `REDIS_REST_URL`: URL de tu instancia Upstash Redis
+   - `REDIS_REST_TOKEN`: Token de tu instancia Upstash Redis
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+3. **Deploy**: Vercel detectará automáticamente que es un proyecto Next.js
 
-## Deployment
+## 🛠️ Desarrollo Local
 
-Your project is live at:
+\`\`\`bash
+# Instalar dependencias
+npm install
 
-**[https://vercel.com/raul-gabinos-projects/v0-next-js-monorepo-setup](https://vercel.com/raul-gabinos-projects/v0-next-js-monorepo-setup)**
+# Crear .env.local con tus API keys
+cp .env.example .env.local
 
-## Build your app
+# Ejecutar en desarrollo
+npm run dev
 
-Continue building your app on:
+# Build para producción
+npm run build
+\`\`\`
 
-**[https://v0.dev/chat/projects/QgVb959VcUZ](https://v0.dev/chat/projects/QgVb959VcUZ)**
+## 📁 Estructura del Proyecto
 
-## How It Works
+\`\`\`
+your-city-vibe/
+├── app/
+│   ├── api/
+│   │   ├── vibe/route.ts    # Clasificación de vibes
+│   │   └── recs/route.ts    # Recomendaciones de lugares
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── Card.tsx
+│   ├── CardList.tsx
+│   └── SkeletonCard.tsx
+├── lib/
+│   ├── fetcher.ts
+│   └── utils.ts
+└── package.json
+\`\`\`
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## 🎯 Funcionalidades
+
+- **Clasificación de Vibes**: Analiza texto o imágenes para detectar el mood
+- **Recomendaciones Inteligentes**: Encuentra lugares usando Perplexity AI
+- **Cache con Redis**: Optimización de rendimiento
+- **UI Responsiva**: Diseño mobile-first con Tailwind CSS
+- **Animaciones Lottie**: Interfaz interactiva y atractiva
+
+## 🔧 APIs Utilizadas
+
+- **OpenAI GPT-4**: Clasificación de vibes y procesamiento de imágenes
+- **Perplexity Sonar**: Búsqueda de lugares en tiempo real
+- **Upstash Redis**: Cache para optimizar rendimiento
+
+## 📱 Vibes Soportados
+
+- **Perrea**: Clubs y rooftops con reggaeton
+- **Productivo**: Cafés y coworks con wifi
+- **Sad**: Cafés acogedores con música acústica
+- **Corridos**: Cantinas con música norteña
+- **Chill**: Bares relajados con buen ambiente
+- **Traka**: Street food y mercados auténticos
+- **Eco**: Parques y espacios naturales
+- **K-cute**: Cafés estéticos e Instagram-worthy

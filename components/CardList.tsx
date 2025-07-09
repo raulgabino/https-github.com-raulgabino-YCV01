@@ -8,9 +8,10 @@ interface Recommendation {
 
 interface CardListProps {
   recs: Recommendation[]
+  vibe?: string
 }
 
-export default function CardList({ recs }: CardListProps) {
+export default function CardList({ recs, vibe = "chill" }: CardListProps) {
   if (recs.length === 0) {
     return (
       <div className="text-center py-8">
@@ -22,13 +23,7 @@ export default function CardList({ recs }: CardListProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 masonry-grid">
       {recs.map((rec, index) => (
-        <Card
-          key={index}
-          name={rec.name}
-          desc={rec.desc}
-          url={rec.url}
-          vibe="chill" // Default vibe, should be passed from parent
-        />
+        <Card key={index} name={rec.name} desc={rec.desc} url={rec.url} vibe={vibe} />
       ))}
     </div>
   )
