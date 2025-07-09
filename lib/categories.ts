@@ -1,257 +1,207 @@
 export interface Category {
   id: string
   name: string
-  icon: string
   emoji: string
-  vibes: Vibe[]
-  searchModifiers: Record<string, string>
-}
-
-export interface Vibe {
-  id: string
-  name: string
-  description: string
-  searchQuery: string
+  keywords: string[]
+  vibes: string[]
+  searchModifier: string
 }
 
 export const CATEGORIES: Category[] = [
   {
     id: "restaurants",
     name: "Restaurantes",
-    icon: "🍽️",
     emoji: "🍽️",
-    vibes: [
-      {
-        id: "perrea",
-        name: "Perrea",
-        description: "Ambiente de fiesta",
-        searchQuery: "restaurants with party atmosphere, loud music, dancing",
-      },
-      {
-        id: "romantico",
-        name: "Romántico",
-        description: "Cena íntima",
-        searchQuery: "romantic restaurants, intimate dining, date night",
-      },
-      {
-        id: "familiar",
-        name: "Familiar",
-        description: "Para toda la familia",
-        searchQuery: "family restaurants, kid-friendly dining",
-      },
-      {
-        id: "trendy",
-        name: "Trendy",
-        description: "Moderno y cool",
-        searchQuery: "trendy restaurants, modern dining, hip atmosphere",
-      },
-      {
-        id: "autentico",
-        name: "Auténtico",
-        description: "Comida tradicional",
-        searchQuery: "authentic local restaurants, traditional food",
-      },
-    ],
-    searchModifiers: {
-      perrea: "restaurants with party atmosphere, loud music, dancing, nightlife dining",
-      romantico: "romantic restaurants, intimate dining, candlelit dinner, date night spots",
-      familiar: "family-friendly restaurants, kid-friendly dining, casual atmosphere",
-      trendy: "trendy restaurants, modern dining, hip atmosphere, Instagram-worthy",
-      autentico: "authentic local restaurants, traditional cuisine, local flavors",
-    },
+    keywords: ["comer", "comida", "restaurante", "cenar", "almorzar", "hambre", "antojo", "plato", "mesa", "reserva"],
+    vibes: ["perrea", "romantico", "familiar", "trendy", "autentico", "chill"],
+    searchModifier: "restaurants and dining places",
   },
   {
     id: "cafeterias",
     name: "Cafeterías",
-    icon: "☕",
     emoji: "☕",
-    vibes: [
-      {
-        id: "productivo",
-        name: "Productivo",
-        description: "Para trabajar",
-        searchQuery: "coffee shops with wifi, coworking spaces, quiet for work",
-      },
-      {
-        id: "chill",
-        name: "Chill",
-        description: "Relajado",
-        searchQuery: "chill coffee shops, relaxed atmosphere, cozy cafés",
-      },
-      {
-        id: "aesthetic",
-        name: "Aesthetic",
-        description: "Bonito para fotos",
-        searchQuery: "aesthetic cafés, Instagram-worthy, beautiful interior",
-      },
-      {
-        id: "estudioso",
-        name: "Estudioso",
-        description: "Para estudiar",
-        searchQuery: "study-friendly cafés, quiet atmosphere, good for reading",
-      },
-      {
-        id: "social",
-        name: "Social",
-        description: "Para socializar",
-        searchQuery: "social coffee shops, meet friends, lively atmosphere",
-      },
+    keywords: [
+      "café",
+      "cafetería",
+      "trabajar",
+      "estudiar",
+      "wifi",
+      "laptop",
+      "desayuno",
+      "mañana",
+      "productivo",
+      "latte",
     ],
-    searchModifiers: {
-      productivo: "coffee shops with wifi, coworking spaces, quiet for work, power outlets",
-      chill: "chill coffee shops, relaxed atmosphere, cozy cafés, comfortable seating",
-      aesthetic: "aesthetic cafés, Instagram-worthy, beautiful interior, photo-friendly",
-      estudioso: "study-friendly cafés, quiet atmosphere, good for reading, library-like",
-      social: "social coffee shops, meet friends, lively atmosphere, community space",
-    },
+    vibes: ["productivo", "chill", "aesthetic", "estudioso", "social"],
+    searchModifier: "coffee shops and cafés",
   },
   {
     id: "hoteles",
     name: "Hoteles",
-    icon: "🏨",
     emoji: "🏨",
-    vibes: [
-      {
-        id: "luxury",
-        name: "Luxury",
-        description: "Experiencia premium",
-        searchQuery: "luxury hotels, 5-star accommodation, premium service",
-      },
-      {
-        id: "business",
-        name: "Business",
-        description: "Para negocios",
-        searchQuery: "business hotels, conference facilities, corporate stays",
-      },
-      {
-        id: "romantico",
-        name: "Romántico",
-        description: "Escapada romántica",
-        searchQuery: "romantic hotels, couples retreat, honeymoon suites",
-      },
-      {
-        id: "familiar",
-        name: "Familiar",
-        description: "Para familias",
-        searchQuery: "family hotels, kid-friendly accommodation, family suites",
-      },
-      {
-        id: "boutique",
-        name: "Boutique",
-        description: "Único y especial",
-        searchQuery: "boutique hotels, unique accommodation, design hotels",
-      },
-    ],
-    searchModifiers: {
-      luxury: "luxury hotels, 5-star accommodation, premium service, high-end amenities",
-      business: "business hotels, conference facilities, corporate stays, work-friendly",
-      romantico: "romantic hotels, couples retreat, honeymoon suites, intimate atmosphere",
-      familiar: "family hotels, kid-friendly accommodation, family suites, children amenities",
-      boutique: "boutique hotels, unique accommodation, design hotels, artistic atmosphere",
-    },
+    keywords: ["hotel", "hostal", "dormir", "quedarse", "noche", "habitación", "cama", "descanso", "viaje", "turismo"],
+    vibes: ["luxury", "business", "romantico", "familiar", "boutique"],
+    searchModifier: "hotels and accommodation",
   },
   {
     id: "recreacion",
-    name: "Recreación",
-    icon: "🎮",
+    name: "Diversión",
     emoji: "🎮",
-    vibes: [
-      {
-        id: "aventura",
-        name: "Aventura",
-        description: "Actividades extremas",
-        searchQuery: "adventure activities, extreme sports, outdoor adventures",
-      },
-      {
-        id: "chill",
-        name: "Chill",
-        description: "Relajante",
-        searchQuery: "relaxing activities, chill entertainment, peaceful recreation",
-      },
-      {
-        id: "familiar",
-        name: "Familiar",
-        description: "Diversión familiar",
-        searchQuery: "family activities, kid-friendly entertainment, family fun",
-      },
-      {
-        id: "fitness",
-        name: "Fitness",
-        description: "Actividad física",
-        searchQuery: "fitness activities, sports facilities, active recreation",
-      },
-      {
-        id: "cultural",
-        name: "Cultural",
-        description: "Arte y cultura",
-        searchQuery: "cultural activities, museums, art galleries, cultural sites",
-      },
+    keywords: [
+      "divertir",
+      "jugar",
+      "entretenimiento",
+      "actividad",
+      "pasear",
+      "aventura",
+      "deporte",
+      "cultura",
+      "museo",
+      "parque",
     ],
-    searchModifiers: {
-      aventura: "adventure activities, extreme sports, outdoor adventures, adrenaline activities",
-      chill: "relaxing activities, chill entertainment, peaceful recreation, leisure activities",
-      familiar: "family activities, kid-friendly entertainment, family fun, all-ages recreation",
-      fitness: "fitness activities, sports facilities, active recreation, gym and sports",
-      cultural: "cultural activities, museums, art galleries, cultural sites, educational fun",
-    },
+    vibes: ["aventura", "chill", "familiar", "fitness", "cultural"],
+    searchModifier: "entertainment and recreational activities",
   },
   {
     id: "moda",
     name: "Moda",
-    icon: "👕",
     emoji: "👕",
-    vibes: [
-      {
-        id: "trendy",
-        name: "Trendy",
-        description: "Última moda",
-        searchQuery: "trendy fashion stores, latest fashion, modern clothing",
-      },
-      {
-        id: "vintage",
-        name: "Vintage",
-        description: "Estilo retro",
-        searchQuery: "vintage clothing stores, retro fashion, second-hand clothes",
-      },
-      {
-        id: "luxury",
-        name: "Luxury",
-        description: "Marcas premium",
-        searchQuery: "luxury fashion stores, designer brands, high-end clothing",
-      },
-      {
-        id: "casual",
-        name: "Casual",
-        description: "Ropa cotidiana",
-        searchQuery: "casual clothing stores, everyday fashion, comfortable clothes",
-      },
-      {
-        id: "alternativo",
-        name: "Alternativo",
-        description: "Estilo único",
-        searchQuery: "alternative fashion stores, unique style, indie clothing",
-      },
-    ],
-    searchModifiers: {
-      trendy: "trendy fashion stores, latest fashion, modern clothing, contemporary style",
-      vintage: "vintage clothing stores, retro fashion, second-hand clothes, thrift shops",
-      luxury: "luxury fashion stores, designer brands, high-end clothing, premium fashion",
-      casual: "casual clothing stores, everyday fashion, comfortable clothes, basic wear",
-      alternativo: "alternative fashion stores, unique style, indie clothing, unconventional fashion",
-    },
+    keywords: ["ropa", "comprar", "tienda", "vestir", "moda", "estilo", "shopping", "zapatos", "accesorios", "outfit"],
+    vibes: ["trendy", "vintage", "luxury", "casual", "alternativo"],
+    searchModifier: "fashion stores and clothing shops",
+  },
+  {
+    id: "bares",
+    name: "Bares",
+    emoji: "🍺",
+    keywords: ["bar", "beber", "trago", "cerveza", "cocktail", "noche", "fiesta", "salir", "copas", "alcohol"],
+    vibes: ["perrea", "chill", "trendy", "social", "dive"],
+    searchModifier: "bars and nightlife venues",
   },
 ]
+
+export const VIBE_MAPPINGS: Record<string, string> = {
+  // Emotions and moods
+  triste: "sad",
+  sad: "sad",
+  deprimido: "sad",
+  melancólico: "sad",
+  nostálgico: "sad",
+  feliz: "chill",
+  happy: "chill",
+  alegre: "chill",
+  contento: "chill",
+  fiesta: "perrea",
+  party: "perrea",
+  bailar: "perrea",
+  reggaeton: "perrea",
+  perreo: "perrea",
+  relajado: "chill",
+  chill: "chill",
+  tranquilo: "chill",
+  peaceful: "chill",
+  romántico: "romantico",
+  romance: "romantico",
+  amor: "romantico",
+  pareja: "romantico",
+  cita: "romantico",
+  productivo: "productivo",
+  trabajar: "productivo",
+  trabajo: "productivo",
+  estudiar: "productivo",
+  focus: "productivo",
+  familiar: "familiar",
+  familia: "familiar",
+  niños: "familiar",
+  kids: "familiar",
+  trendy: "trendy",
+  moderno: "trendy",
+  cool: "trendy",
+  hipster: "trendy",
+  auténtico: "autentico",
+  tradicional: "autentico",
+  local: "autentico",
+  típico: "autentico",
+  aesthetic: "aesthetic",
+  bonito: "aesthetic",
+  instagram: "aesthetic",
+  foto: "aesthetic",
+  aventura: "aventura",
+  adventure: "aventura",
+  extremo: "aventura",
+  adrenalina: "aventura",
+  luxury: "luxury",
+  lujo: "luxury",
+  premium: "luxury",
+  caro: "luxury",
+  vintage: "vintage",
+  retro: "vintage",
+  antiguo: "vintage",
+  clásico: "vintage",
+}
+
+export function detectCategoriesFromText(text: string): Category[] {
+  const lowerText = text.toLowerCase()
+  const detectedCategories: Category[] = []
+
+  for (const category of CATEGORIES) {
+    const hasKeyword = category.keywords.some((keyword) => lowerText.includes(keyword.toLowerCase()))
+    if (hasKeyword) {
+      detectedCategories.push(category)
+    }
+  }
+
+  // If no specific categories detected, suggest most common ones
+  if (detectedCategories.length === 0) {
+    return [
+      CATEGORIES.find((c) => c.id === "restaurants")!,
+      CATEGORIES.find((c) => c.id === "cafeterias")!,
+      CATEGORIES.find((c) => c.id === "bares")!,
+    ]
+  }
+
+  return detectedCategories.slice(0, 4) // Max 4 suggestions
+}
+
+export function detectVibeFromText(text: string): string {
+  const lowerText = text.toLowerCase()
+
+  for (const [keyword, vibe] of Object.entries(VIBE_MAPPINGS)) {
+    if (lowerText.includes(keyword)) {
+      return vibe
+    }
+  }
+
+  return "chill" // Default vibe
+}
 
 export function getCategoryById(id: string): Category | undefined {
   return CATEGORIES.find((cat) => cat.id === id)
 }
 
-export function getVibesByCategory(categoryId: string): Vibe[] {
-  const category = getCategoryById(categoryId)
-  return category?.vibes || []
-}
+export function buildSearchQuery(category: Category, vibe: string, customText: string): string {
+  const vibeModifiers: Record<string, string> = {
+    sad: "cozy, intimate, quiet atmosphere with soft music",
+    chill: "relaxed, laid-back, good vibes, comfortable",
+    perrea: "lively, party atmosphere, music, dancing, energetic",
+    romantico: "romantic, intimate, date night, couples",
+    productivo: "quiet, wifi, work-friendly, productive environment",
+    familiar: "family-friendly, kids welcome, casual atmosphere",
+    trendy: "modern, hip, Instagram-worthy, contemporary",
+    autentico: "authentic, traditional, local, genuine",
+    aesthetic: "beautiful, photogenic, stylish, aesthetic",
+    aventura: "adventure, outdoor, exciting, active",
+    luxury: "upscale, premium, high-end, sophisticated",
+    vintage: "retro, vintage, classic, nostalgic",
+    casual: "casual, everyday, comfortable, accessible",
+    alternativo: "alternative, unique, unconventional, indie",
+    social: "social, meet people, lively, community",
+    cultural: "cultural, artistic, educational, museums",
+    fitness: "active, sports, fitness, healthy",
+  }
 
-export function getSearchModifier(categoryId: string, vibeId: string): string {
-  const category = getCategoryById(categoryId)
-  return category?.searchModifiers[vibeId] || ""
+  const vibeDescription = vibeModifiers[vibe] || "good atmosphere"
+  const baseQuery = `${category.searchModifier} with ${vibeDescription}`
+
+  return customText ? `${baseQuery} that also matches: ${customText}` : baseQuery
 }

@@ -11,6 +11,7 @@ interface RecsRequest {
   category: string
   vibe: string
   city?: string
+  searchQuery?: string
   customInput?: string
 }
 
@@ -25,18 +26,6 @@ interface ProcessedRec {
   phoneNumber: string
   website: string
   googleMapsUrl: string
-}
-
-// Vibe to modifier mapping
-const VIBE_MODIFIERS: Record<string, string> = {
-  perrea: "nightclubs, rooftops, or bars with reggaeton music and party atmosphere",
-  productivo: "coffee shops, coworking spaces, or quiet cafés with wifi for working",
-  sad: "cozy cafés with acoustic music, dim lighting, and contemplative atmosphere",
-  corridos: "cantinas, taquerías, or bars with Mexican music and traditional atmosphere",
-  chill: "relaxed bars, lounges, or cafés with good vibes and laid-back atmosphere",
-  traka: "street food markets, food trucks, or authentic local food spots",
-  eco: "parks, nature spots, organic cafés, or eco-friendly venues",
-  "k-cute": "aesthetic cafés, cute shops, or Instagram-worthy spots with kawaii vibes",
 }
 
 // Robust JSON parser
@@ -193,23 +182,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const city = body.city || "Ciudad Victoria"
     const category = body.category
     const vibe = body.vibe
+    const searchQuery = body.searchQuery || ""
     const customInput = body.customInput || ""
 
-    // Import categories dynamically
-    const { getSearchModifier } = await import("@/lib/categories")
-
-    // Get the search modifier for this category and vibe
-    const modifier = getSearchModifier(category, vibe)
-    if (!modifier) {
-      return NextResponse.json({ error: "Unknown category or vibe combination" }, { status: 400 })
-    }
-
-    // Enhance search with custom input
-    const enhancedModifier = customInput ? `${modifier} that also matches: ${customInput}` : modifier
+    // Use the provided search query or build a basic one
+    const modifier = searchQuery || `${category} with ${vibe} atmosphere in ${city}`
 
     let processedRecs: ProcessedRec[] = []
 
-    // Continue with existing Perplexity and GPT fallback logic...
     // Try Perplexity first
     try {
       const perplexityResponse = await fetchWithRetry("https://api.perplexity.ai/chat/completions", {
@@ -241,7 +221,7 @@ Find exactly 4 places. Use real data when available. Be specific and accurate.`,
             },
             {
               role: "user",
-              content: `Find 4 specific places in ${city} for: ${enhancedModifier}`,
+              content: `Find 4 specific places in ${city} for: ${modifier}`,
             },
           ],
           max_tokens: 1200,
@@ -264,7 +244,7 @@ Find exactly 4 places. Use real data when available. Be specific and accurate.`,
     // If Perplexity fails or returns no results, use GPT fallback
     if (processedRecs.length === 0) {
       console.log("Using GPT fallback...")
-      processedRecs = await getGPTFallback(city, enhancedModifier)
+      processedRecs = await getGPTFallback(city, modifier)
     }
 
     // Ultimate fallback if everything fails
