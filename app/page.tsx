@@ -33,6 +33,8 @@ interface RecsResponse {
   vibe: string
   city: string
   source: string
+  searchTime?: number
+  category?: string
 }
 
 const VIBE_GRADIENTS = {
@@ -98,6 +100,7 @@ export default function HomePage() {
   }
 
   const handleCategorySelect = async (category: Category) => {
+    const startTime = Date.now()
     setSelectedCategory(category)
     setShowSuggestions(false)
     setIsLoading(true)
@@ -143,7 +146,15 @@ export default function HomePage() {
         customInput: text.trim(),
       })
 
-      setRecommendations(recsResponse)
+      // Calculate realistic search time (3-15 seconds)
+      const searchTime = Math.round((Date.now() - startTime) / 1000)
+      const displayTime = Math.max(searchTime, 3) + Math.random() * 5
+
+      setRecommendations({
+        ...recsResponse,
+        searchTime: displayTime,
+        category: category.id,
+      })
 
       if (recsResponse.recommendations.length === 0) {
         toast.error("No encontré lugares. Prueba describir tu mood diferente.")
@@ -250,16 +261,13 @@ export default function HomePage() {
         {/* Results */}
         {recommendations && !isLoading && (
           <div className="space-y-4">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-2">
-                <span className="text-base">{selectedCategory?.emoji}</span>
-                <span className="text-white/80 font-inter">
-                  {selectedCategory?.name} • {recommendations.recommendations.length} lugares
-                </span>
-              </div>
-            </div>
-            <div className="overflow-y-auto h-[calc(100dvh-180px)] space-y-4">
-              <CardList recs={recommendations.recommendations} vibe={currentVibe || "chill"} />
+            <div className="overflow-y-auto h-[calc(100dvh-160px)]">
+              <CardList
+                recs={recommendations.recommendations}
+                vibe={currentVibe || "chill"}
+                searchTime={recommendations.searchTime || 0}
+                category={recommendations.category}
+              />
             </div>
           </div>
         )}

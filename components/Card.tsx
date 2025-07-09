@@ -1,7 +1,5 @@
 "use client"
-
-import type React from "react"
-import { ExternalLink, MapPin, Clock, Star, Phone, Globe } from "lucide-react"
+import { MapPin, Clock, Star } from "lucide-react"
 
 interface CardProps {
   name: string
@@ -15,6 +13,7 @@ interface CardProps {
   website: string
   googleMapsUrl: string
   vibe: string
+  imageUrl?: string
 }
 
 export default function Card({
@@ -29,90 +28,131 @@ export default function Card({
   website,
   googleMapsUrl,
   vibe,
+  imageUrl,
 }: CardProps) {
   const handleClick = () => {
     window.open(googleMapsUrl, "_blank")
   }
 
-  const handleWebsiteClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (website) {
-      window.open(website, "_blank")
+  const getVibeBadge = (vibe: string) => {
+    const badges: Record<string, string> = {
+      sad: "Tranquilo y acogedor",
+      chill: "Relajado",
+      perrea: "Ambiente de fiesta",
+      romantico: "Romántico",
+      productivo: "Ideal para trabajar",
+      familiar: "Apto familias",
+      trendy: "Moderno y cool",
+      autentico: "Auténtico local",
+      aesthetic: "Instagrameable",
+      aventura: "Aventurero",
+      luxury: "Premium",
+      vintage: "Estilo vintage",
+      social: "Para socializar",
     }
+    return badges[vibe] || "Recomendado"
+  }
+
+  const formatPrice = (priceRange: string) => {
+    const priceMap: Record<string, string> = {
+      $: "$150-300",
+      $$: "$300-600",
+      $$$: "$600-1000",
+      $$$$: "$1000+",
+      Gratis: "Gratis",
+      Varía: "Precio varía",
+    }
+    return priceMap[priceRange] || priceRange
   }
 
   const renderStars = (rating: number) => {
     const stars = []
     const fullStars = Math.floor(rating)
-    const hasHalfStar = rating % 1 !== 0
 
     for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)
+      stars.push(<Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />)
     }
 
-    if (hasHalfStar) {
-      stars.push(<Star key="half" className="w-4 h-4 fill-yellow-400/50 text-yellow-400" />)
-    }
-
-    const emptyStars = 5 - Math.ceil(rating)
+    const emptyStars = 5 - fullStars
     for (let i = 0; i < emptyStars; i++) {
-      stars.push(<Star key={`empty-${i}`} className="w-4 h-4 text-gray-400" />)
+      stars.push(<Star key={`empty-${i}`} className="w-3 h-3 text-gray-400" />)
     }
 
     return stars
   }
 
+  const getPlaceholderImage = (type: string, vibe: string) => {
+    // Generate a placeholder based on type and vibe
+    const images: Record<string, string> = {
+      restaurant: "🍽️",
+      cafe: "☕",
+      bar: "🍺",
+      hotel: "🏨",
+      shop: "🛍️",
+      recreation: "🎮",
+    }
+    return images[type] || "📍"
+  }
+
   return (
     <div
       onClick={handleClick}
-      className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 cursor-pointer hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-white/30 hover:scale-[1.02] active:scale-95"
+      className="bg-white rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 flex-shrink-0 w-80"
     >
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-white text-lg mb-1 font-inter">{name}</h3>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-white/70 text-sm font-inter capitalize">{type}</span>
-            <span className="text-white/50">•</span>
-            <span className="text-white/70 text-sm font-inter">{priceRange}</span>
-          </div>
-          {rating > 0 && (
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center gap-1">{renderStars(rating)}</div>
-              <span className="text-white/70 text-sm font-inter">{rating.toFixed(1)}</span>
+      {/* Image Section - Larger like Perplexity */}
+      <div className="relative h-56 bg-gradient-to-br from-gray-50 to-gray-100">
+        {imageUrl ? (
+          <img src={imageUrl || "/placeholder.svg"} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+            <div className="text-center">
+              <div className="text-6xl mb-3">{getPlaceholderImage(type, vibe)}</div>
+              <div className="text-gray-500 text-sm font-medium">{type}</div>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Vibe Badge - Top left like Perplexity */}
+        <div className="absolute top-4 left-4">
+          <span className="bg-black/80 text-white px-3 py-1.5 rounded-lg text-sm font-medium">
+            {getVibeBadge(vibe)}
+          </span>
         </div>
-        <ExternalLink className="w-5 h-5 text-white/60 flex-shrink-0" />
+
+        {/* Rating Badge - Top right */}
+        {rating > 0 && (
+          <div className="absolute top-4 right-4 bg-white/95 px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
+            <div className="flex items-center">{renderStars(rating)}</div>
+            <span className="text-xs font-semibold text-gray-800 ml-1">{rating.toFixed(1)}</span>
+          </div>
+        )}
       </div>
 
-      <p className="text-white/80 text-sm mb-3 font-inter leading-relaxed">{description}</p>
+      {/* Content Section */}
+      <div className="p-5">
+        {/* Title */}
+        <h3 className="font-semibold text-gray-900 text-lg mb-3 leading-tight">{name}</h3>
 
-      <div className="space-y-2">
-        <div className="flex items-start gap-2">
-          <MapPin className="w-4 h-4 text-white/60 mt-0.5 flex-shrink-0" />
-          <span className="text-white/70 text-sm font-inter">{address}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-white/60 flex-shrink-0" />
-          <span className="text-white/70 text-sm font-inter">{hours}</span>
-        </div>
-        {phoneNumber && (
-          <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4 text-white/60 flex-shrink-0" />
-            <span className="text-white/70 text-sm font-inter">{phoneNumber}</span>
+        {/* Price - Large like Perplexity */}
+        <div className="text-2xl font-bold text-gray-900 mb-2">{formatPrice(priceRange)}</div>
+
+        {/* Source */}
+        <div className="text-gray-500 text-sm mb-4">Google Maps</div>
+
+        {/* Quick Info */}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-gray-600 text-sm">
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{address}</span>
           </div>
-        )}
-        {website && (
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-white/60 flex-shrink-0" />
-            <button
-              onClick={handleWebsiteClick}
-              className="text-white/70 text-sm font-inter hover:text-white transition-colors underline"
-            >
-              Sitio web
-            </button>
+          <div className="flex items-center gap-2 text-gray-600 text-sm">
+            <Clock className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{hours}</span>
           </div>
-        )}
+        </div>
+
+        {/* Description */}
+        <p className="text-gray-700 text-sm leading-relaxed">{description}</p>
       </div>
     </div>
   )
