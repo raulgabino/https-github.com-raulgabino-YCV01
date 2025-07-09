@@ -20,11 +20,19 @@ interface VibeResponse {
 interface RecsResponse {
   recommendations: Array<{
     name: string
-    desc: string
-    url: string
+    address: string
+    rating: number
+    description: string
+    type: string
+    priceRange: string
+    hours: string
+    phoneNumber: string
+    website: string
+    googleMapsUrl: string
   }>
   vibe: string
   city: string
+  source: string
 }
 
 const VIBE_GRADIENTS = {

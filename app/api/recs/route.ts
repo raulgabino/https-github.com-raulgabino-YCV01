@@ -14,24 +14,140 @@ interface RecsRequest {
 
 interface ProcessedRec {
   name: string
-  desc: string
-  url: string
+  address: string
+  rating: number
+  description: string
+  type: string
+  priceRange: string
+  hours: string
+  phoneNumber: string
+  website: string
+  googleMapsUrl: string
 }
 
 // Vibe to modifier mapping
 const VIBE_MODIFIERS: Record<string, string> = {
-  perrea: "clubs or rooftops open past 1 AM playing reggaeton",
-  productivo: "coffee shops or coworks with wifi and quiet areas",
-  sad: "cozy cafés with acoustic music and dim lights",
-  corridos: "cantinas or taquerías open late with live norteno",
-  chill: "relaxed bars or lounges with good vibes and craft drinks",
-  traka: "street food spots or markets with authentic local flavors",
-  eco: "parks, nature spots, or eco-friendly venues for outdoor activities",
-  "k-cute": "aesthetic cafés, cute shops, or Instagram-worthy spots",
+  perrea: "nightclubs, rooftops, or bars with reggaeton music and party atmosphere",
+  productivo: "coffee shops, coworking spaces, or quiet cafés with wifi for working",
+  sad: "cozy cafés with acoustic music, dim lighting, and contemplative atmosphere",
+  corridos: "cantinas, taquerías, or bars with Mexican music and traditional atmosphere",
+  chill: "relaxed bars, lounges, or cafés with good vibes and laid-back atmosphere",
+  traka: "street food markets, food trucks, or authentic local food spots",
+  eco: "parks, nature spots, organic cafés, or eco-friendly venues",
+  "k-cute": "aesthetic cafés, cute shops, or Instagram-worthy spots with kawaii vibes",
+}
+
+// Robust JSON parser
+function parsePerplexityResponse(content: string): ProcessedRec[] {
+  try {
+    // Try to find JSON array in the response
+    const jsonMatch = content.match(/\[[\s\S]*?\]/g)
+    if (jsonMatch) {
+      for (const match of jsonMatch) {
+        try {
+          const parsed = JSON.parse(match)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((item) => ({
+              name: item.name || "Lugar desconocido",
+              address: item.address || "Dirección no disponible",
+              rating: Number.parseFloat(item.rating) || 0,
+              description: item.description || "Sin descripción",
+              type: item.type || "Lugar",
+              priceRange: item.priceRange || "No especificado",
+              hours: item.hours || "Horarios no disponibles",
+              phoneNumber: item.phoneNumber || "",
+              website: item.website || "",
+              googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + " " + (item.address || ""))}`,
+            }))
+          }
+        } catch (e) {
+          continue
+        }
+      }
+    }
+
+    // Try to find individual JSON objects
+    const objectMatches = content.match(/\{[^{}]*\}/g)
+    if (objectMatches) {
+      const places: ProcessedRec[] = []
+      for (const match of objectMatches) {
+        try {
+          const parsed = JSON.parse(match)
+          if (parsed.name) {
+            places.push({
+              name: parsed.name || "Lugar desconocido",
+              address: parsed.address || "Dirección no disponible",
+              rating: Number.parseFloat(parsed.rating) || 0,
+              description: parsed.description || "Sin descripción",
+              type: parsed.type || "Lugar",
+              priceRange: parsed.priceRange || "No especificado",
+              hours: parsed.hours || "Horarios no disponibles",
+              phoneNumber: parsed.phoneNumber || "",
+              website: parsed.website || "",
+              googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsed.name + " " + (parsed.address || ""))}`,
+            })
+          }
+        } catch (e) {
+          continue
+        }
+      }
+      if (places.length > 0) return places
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error parsing Perplexity response:", error)
+    return []
+  }
+}
+
+// GPT fallback for when Perplexity fails
+async function getGPTFallback(city: string, modifier: string): Promise<ProcessedRec[]> {
+  if (!openai) return []
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a local guide. Generate realistic places in the specified city that match the criteria. Return ONLY a JSON array with this exact format:
+[
+  {
+    "name": "Place Name",
+    "address": "Full address with city",
+    "rating": 4.2,
+    "description": "Why this place fits the vibe (max 20 words)",
+    "type": "restaurant/bar/cafe/club/etc",
+    "priceRange": "$-$$$$",
+    "hours": "Mon-Sun 9am-10pm",
+    "phoneNumber": "+1234567890",
+    "website": "https://example.com"
+  }
+]`,
+        },
+        {
+          role: "user",
+          content: `Find 4 realistic places in ${city} for: ${modifier}`,
+        },
+      ],
+      max_tokens: 1000,
+      temperature: 0.3,
+    })
+
+    const content = response.choices[0]?.message?.content?.trim()
+    if (!content) return []
+
+    const parsed = parsePerplexityResponse(content)
+    return parsed.length > 0 ? parsed : []
+  } catch (error) {
+    console.error("GPT fallback error:", error)
+    return []
+  }
 }
 
 // Fetch with timeout and retry
-async function fetchWithRetry(url: string, options: RequestInit, retries = 2, timeout = 1500): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, retries = 2, timeout = 3000): Promise<Response> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
 
@@ -43,6 +159,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 2, ti
     clearTimeout(timeoutId)
 
     if (!response.ok && retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       return fetchWithRetry(url, options, retries - 1, timeout)
     }
 
@@ -51,6 +168,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 2, ti
     clearTimeout(timeoutId)
 
     if (retries > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       return fetchWithRetry(url, options, retries - 1, timeout)
     }
 
@@ -73,38 +191,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const city = body.city || "Ciudad Victoria"
     const vibe = body.vibe.toLowerCase()
 
-    // Step 1: Get modifier for vibe
+    // Get modifier for vibe
     const modifier = VIBE_MODIFIERS[vibe]
     if (!modifier) {
       return NextResponse.json({ error: "Unknown vibe type" }, { status: 400 })
     }
 
-    // Step 2: Generate search query using OpenAI
-    const queryResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "Return ONE plain English query for web search, no quotes.",
-        },
-        {
-          role: "user",
-          content: `${city} ${modifier}`,
-        },
-      ],
-      max_tokens: 50,
-      temperature: 0.3,
-    })
-
-    const searchQuery = queryResponse.choices[0]?.message?.content?.trim()
-
-    if (!searchQuery) {
-      return NextResponse.json({ error: "Failed to generate search query" }, { status: 500 })
-    }
-
-    // Step 3: Search with Perplexity Sonar
     let processedRecs: ProcessedRec[] = []
 
+    // Try Perplexity first
     try {
       const perplexityResponse = await fetchWithRetry("https://api.perplexity.ai/chat/completions", {
         method: "POST",
@@ -117,14 +212,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           messages: [
             {
               role: "system",
-              content: "Find local places and return as JSON array with name, desc (max 15 words), and url fields.",
+              content: `You are a local guide specializing in ${city}. Find real, specific places that match the criteria. Return ONLY a JSON array with this exact format:
+[
+  {
+    "name": "Exact business name",
+    "address": "Full street address, ${city}",
+    "rating": 4.2,
+    "description": "Why this place fits the vibe (max 20 words)",
+    "type": "restaurant/bar/cafe/club/etc",
+    "priceRange": "$-$$$$",
+    "hours": "Mon-Sun 9am-10pm or actual hours",
+    "phoneNumber": "+1234567890",
+    "website": "https://actual-website.com"
+  }
+]
+Find exactly 4 places. Use real data when available. Be specific and accurate.`,
             },
             {
               role: "user",
-              content: searchQuery,
+              content: `Find 4 specific places in ${city} for: ${modifier}`,
             },
           ],
-          max_tokens: 1000,
+          max_tokens: 1200,
           temperature: 0.2,
         }),
       })
@@ -134,43 +243,42 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const content = perplexityData.choices?.[0]?.message?.content
 
         if (content) {
-          try {
-            const jsonMatch = content.match(/\[[\s\S]*\]/)
-            if (jsonMatch) {
-              processedRecs = JSON.parse(jsonMatch[0])
-            }
-          } catch (parseError) {
-            // Fallback
-            processedRecs = [
-              {
-                name: `${city} ${vibe} spots`,
-                desc: `Discover the best ${vibe} places in ${city}`,
-                url: `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`,
-              },
-            ]
-          }
+          processedRecs = parsePerplexityResponse(content)
         }
       }
     } catch (error) {
       console.error("Perplexity API error:", error)
     }
 
-    // Fallback if no results
-    if (!processedRecs.length) {
+    // If Perplexity fails or returns no results, use GPT fallback
+    if (processedRecs.length === 0) {
+      console.log("Using GPT fallback...")
+      processedRecs = await getGPTFallback(city, modifier)
+    }
+
+    // Ultimate fallback if everything fails
+    if (processedRecs.length === 0) {
       processedRecs = [
         {
-          name: `${city} ${vibe} recommendations`,
-          desc: `Find great ${vibe} spots in ${city}`,
-          url: `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`,
+          name: `${city} ${vibe} spots`,
+          address: `${city}, México`,
+          rating: 0,
+          description: `Descubre lugares ${vibe} en ${city}`,
+          type: "Búsqueda",
+          priceRange: "Varía",
+          hours: "Ver horarios individuales",
+          phoneNumber: "",
+          website: "",
+          googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(vibe + " " + city)}`,
         },
       ]
     }
 
     return NextResponse.json({
       recommendations: processedRecs,
-      query: searchQuery,
       city,
       vibe,
+      source: processedRecs.length > 0 ? "perplexity" : "fallback",
     })
   } catch (error) {
     console.error("Error in recs handler:", error)

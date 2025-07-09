@@ -1,29 +1,39 @@
 import Card from "./Card"
 
-interface Recommendation {
-  name: string
-  desc: string
-  url: string
-}
-
 interface CardListProps {
-  recs: Recommendation[]
-  vibe?: string
+  recs: Array<{
+    name: string
+    address: string
+    rating: number
+    description: string
+    type: string
+    priceRange: string
+    hours: string
+    phoneNumber: string
+    website: string
+    googleMapsUrl: string
+  }>
+  vibe: string
 }
 
-export default function CardList({ recs, vibe = "chill" }: CardListProps) {
-  if (recs.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-400">No encontré lugares. Prueba otra vibra.</p>
-      </div>
-    )
-  }
-
+export default function CardList({ recs, vibe }: CardListProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 masonry-grid">
+    <div className="space-y-4">
       {recs.map((rec, index) => (
-        <Card key={index} name={rec.name} desc={rec.desc} url={rec.url} vibe={vibe} />
+        <Card
+          key={index}
+          name={rec.name}
+          address={rec.address}
+          rating={rec.rating}
+          description={rec.description}
+          type={rec.type}
+          priceRange={rec.priceRange}
+          hours={rec.hours}
+          phoneNumber={rec.phoneNumber}
+          website={rec.website}
+          googleMapsUrl={rec.googleMapsUrl}
+          vibe={vibe}
+        />
       ))}
     </div>
   )
