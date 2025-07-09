@@ -1,15 +1,11 @@
 import { OpenAI } from "openai"
-import { Redis } from "@upstash/redis"
 import { type NextRequest, NextResponse } from "next/server"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-const redis = new Redis({
-  url: process.env.REDIS_REST_URL!,
-  token: process.env.REDIS_REST_TOKEN!,
-})
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  : null
 
 interface RecsRequest {
   vibe: string
@@ -64,6 +60,10 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 2, ti
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    if (!openai) {
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
+    }
+
     const body: RecsRequest = await request.json()
 
     if (!body.vibe) {
@@ -72,14 +72,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const city = body.city || "Ciudad Victoria"
     const vibe = body.vibe.toLowerCase()
-
-    // Check cache first
-    const cacheKey = `recs:${vibe}:${city}`
-    const cachedResult = await redis.get<ProcessedRec[]>(cacheKey)
-
-    if (cachedResult) {
-      return NextResponse.json({ recommendations: cachedResult })
-    }
 
     // Step 1: Get modifier for vibe
     const modifier = VIBE_MODIFIERS[vibe]
@@ -173,9 +165,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
       ]
     }
-
-    // Cache results for 30 minutes
-    await redis.setex(cacheKey, 1800, processedRecs)
 
     return NextResponse.json({
       recommendations: processedRecs,

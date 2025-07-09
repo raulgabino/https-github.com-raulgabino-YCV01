@@ -1,15 +1,11 @@
 import { OpenAI } from "openai"
-import { Redis } from "@upstash/redis"
 import { type NextRequest, NextResponse } from "next/server"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-const redis = new Redis({
-  url: process.env.REDIS_REST_URL!,
-  token: process.env.REDIS_REST_TOKEN!,
-})
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  : null
 
 interface VibeRequest {
   text?: string
@@ -21,19 +17,12 @@ interface VibeResponse {
   confidence: number
 }
 
-// Simple hash function for cache keys
-function hashString(str: string): string {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(36)
-}
-
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    if (!openai) {
+      return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
+    }
+
     const body: VibeRequest = await request.json()
 
     if (!body.text && !body.image_url) {
@@ -80,14 +69,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input = body.text!
     }
 
-    // Check cache first
-    const cacheKey = `vibe:${hashString(input)}`
-    const cachedResult = await redis.get<VibeResponse>(cacheKey)
-
-    if (cachedResult) {
-      return NextResponse.json(cachedResult)
-    }
-
     // Step 2: Classify the vibe
     const classificationResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -124,9 +105,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (classification.confidence < 0.6) {
       return NextResponse.json({ ask: "¿Cómo te sientes?" }, { status: 400 })
     }
-
-    // Step 4: Cache the result for 30 minutes (1800 seconds)
-    await redis.setex(cacheKey, 1800, classification)
 
     return NextResponse.json(classification)
   } catch (error) {
