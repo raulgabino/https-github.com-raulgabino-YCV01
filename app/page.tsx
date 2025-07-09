@@ -261,7 +261,24 @@ export default function HomePage() {
         {/* Results */}
         {recommendations && !isLoading && (
           <div className="space-y-4">
-            <div className="overflow-y-auto h-[calc(100dvh-160px)]">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-2">
+                <span className="text-base">{selectedCategory?.emoji}</span>
+                <span className="text-white/80 font-inter">
+                  {selectedCategory?.name} • {recommendations.recommendations.length} lugares
+                </span>
+              </div>
+              {/* Source indicator */}
+              <div className="text-white/60 text-sm">
+                Powered by{" "}
+                {recommendations.source === "exa_ai"
+                  ? "Exa.ai"
+                  : recommendations.source === "gpt_fallback"
+                    ? "OpenAI"
+                    : "AI Search"}
+              </div>
+            </div>
+            <div className="overflow-y-auto h-[calc(100dvh-180px)] space-y-4">
               <CardList
                 recs={recommendations.recommendations}
                 vibe={currentVibe || "chill"}
