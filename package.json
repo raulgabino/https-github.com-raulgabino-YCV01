@@ -16,21 +16,18 @@
     "version-packages": "changeset version"
   },
   "dependencies": {
-    "@upstash/redis": "latest",
     "@your-city-vibe/api": "latest",
+    "@your-city-vibe/data": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.454.0",
     "next": "14.2.16",
-    "openai": "latest",
     "react": "^18",
     "react-dom": "^18",
     "sonner": "latest",
     "swr": "latest",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7",
-    "ws": "latest",
-    "zod": "latest"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
