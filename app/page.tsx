@@ -4,13 +4,14 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import useSWRMutation from "swr/mutation"
 import { toast } from "sonner"
-import { Paperclip, Sparkles } from "lucide-react"
+import { Paperclip, Sparkles, MapPin, ChevronDown } from "lucide-react"
 import CardList from "@/components/CardList"
 import SkeletonCard from "@/components/SkeletonCard"
 import { fetcher } from "@/lib/fetcher"
 import { toBase64 } from "@/lib/utils"
 import { Toaster } from "sonner"
 import { detectCategoriesFromText, detectVibeFromText, buildSearchQuery, type Category } from "@/lib/categories"
+import { detectCityFromText, getPopularCities, type City } from "@/lib/cities"
 
 interface VibeResponse {
   vibe: string
@@ -60,7 +61,10 @@ export default function HomePage() {
   const [text, setText] = useState("")
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [suggestedCategories, setSuggestedCategories] = useState<Category[]>([])
+  const [suggestedCities, setSuggestedCities] = useState<City[]>([])
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [selectedCity, setSelectedCity] = useState<City | null>(null)
+  const [showCitySelector, setShowCitySelector] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [recommendations, setRecommendations] = useState<RecsResponse | null>(null)
   const [currentVibe, setCurrentVibe] = useState<string | null>(null)
@@ -85,9 +89,21 @@ export default function HomePage() {
     if (text.trim().length > 2) {
       const categories = detectCategoriesFromText(text)
       setSuggestedCategories(categories)
+
+      // Detect city from text
+      const detectedCity = detectCityFromText(text)
+      if (detectedCity) {
+        setSelectedCity(detectedCity)
+        setSuggestedCities([])
+      } else {
+        // Show popular cities if no city detected
+        setSuggestedCities(getPopularCities().slice(0, 4))
+      }
+
       setShowSuggestions(true)
     } else {
       setSuggestedCategories([])
+      setSuggestedCities([])
       setShowSuggestions(false)
     }
   }, [text])
@@ -99,10 +115,31 @@ export default function HomePage() {
     }
   }
 
+  const handleCitySelect = (city: City) => {
+    setSelectedCity(city)
+    setShowCitySelector(false)
+    // If we have both city and category, trigger search
+    if (selectedCategory) {
+      handleSearch(selectedCategory, city)
+    }
+  }
+
   const handleCategorySelect = async (category: Category) => {
-    const startTime = Date.now()
     setSelectedCategory(category)
+
+    // If no city selected, show city selector
+    if (!selectedCity) {
+      setShowCitySelector(true)
+      return
+    }
+
+    await handleSearch(category, selectedCity)
+  }
+
+  const handleSearch = async (category: Category, city: City) => {
+    const startTime = Date.now()
     setShowSuggestions(false)
+    setShowCitySelector(false)
     setIsLoading(true)
     setRecommendations(null)
 
@@ -141,7 +178,7 @@ export default function HomePage() {
       const recsResponse = await triggerRecs({
         category: category.id,
         vibe: finalVibe,
-        city: "Ciudad Victoria",
+        city: city.name,
         searchQuery: searchQuery,
         customInput: text.trim(),
       })
@@ -157,7 +194,7 @@ export default function HomePage() {
       })
 
       if (recsResponse.recommendations.length === 0) {
-        toast.error("No encontré lugares. Prueba describir tu mood diferente.")
+        toast.error("No encontré lugares. Prueba con otra ciudad o categoría.")
       }
     } catch (error: any) {
       toast.error(error.message || "Algo salió mal")
@@ -170,10 +207,13 @@ export default function HomePage() {
     setText("")
     setImageFile(null)
     setSuggestedCategories([])
+    setSuggestedCities([])
     setSelectedCategory(null)
+    setSelectedCity(null)
     setRecommendations(null)
     setCurrentVibe(null)
     setShowSuggestions(false)
+    setShowCitySelector(false)
   }
 
   return (
@@ -193,11 +233,30 @@ export default function HomePage() {
               type="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Cuéntame tu vibe... 'me siento triste y quiero café' o 'quiero bailar reggaeton'"
+              placeholder="Cuéntame tu vibe... 'me siento triste y quiero café en CDMX' o 'quiero bailar reggaeton en Guadalajara'"
               className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 font-inter text-base"
             />
             {text && <Sparkles className="absolute right-4 top-4 w-5 h-5 text-white/40" />}
           </div>
+
+          {/* Selected City Display */}
+          {selectedCity && (
+            <div className="flex items-center justify-between px-4 py-3 bg-white/10 border border-white/20 rounded-xl">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-white/60" />
+                <span className="text-white/80 font-inter text-sm">
+                  <span className="text-base mr-1">{selectedCity.emoji}</span>
+                  {selectedCity.name}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowCitySelector(true)}
+                className="text-white/60 hover:text-white/80 transition-colors"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {/* Image Upload */}
           <div className="flex items-center gap-3">
@@ -214,7 +273,7 @@ export default function HomePage() {
           </div>
 
           {/* Smart Category Suggestions */}
-          {showSuggestions && suggestedCategories.length > 0 && (
+          {showSuggestions && suggestedCategories.length > 0 && !showCitySelector && (
             <div className="animate-in slide-in-from-bottom-2 duration-300">
               <p className="text-sm text-white/80 mb-3 font-inter">¿Qué tipo de lugar buscas?</p>
               <div className="flex flex-wrap gap-2">
@@ -232,8 +291,52 @@ export default function HomePage() {
             </div>
           )}
 
+          {/* City Suggestions */}
+          {showSuggestions && suggestedCities.length > 0 && !selectedCity && !showCitySelector && (
+            <div className="animate-in slide-in-from-bottom-2 duration-300">
+              <p className="text-sm text-white/80 mb-3 font-inter">¿En qué ciudad?</p>
+              <div className="flex flex-wrap gap-2">
+                {suggestedCities.map((city) => (
+                  <button
+                    key={city.id}
+                    onClick={() => handleCitySelect(city)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-sm text-white/80 hover:bg-white/20 transition-all duration-200 hover:scale-105 active:scale-95 font-inter"
+                  >
+                    <span className="text-base">{city.emoji}</span>
+                    <span>{city.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* City Selector Modal */}
+          {showCitySelector && (
+            <div className="animate-in slide-in-from-bottom-2 duration-300">
+              <p className="text-sm text-white/80 mb-3 font-inter">Selecciona tu ciudad:</p>
+              <div className="max-h-48 overflow-y-auto space-y-2 bg-white/5 rounded-xl p-3">
+                {getPopularCities().map((city) => (
+                  <button
+                    key={city.id}
+                    onClick={() => handleCitySelect(city)}
+                    className="w-full flex items-center gap-3 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white/80 hover:bg-white/20 transition-all duration-200 font-inter text-left"
+                  >
+                    <span className="text-base">{city.emoji}</span>
+                    <span>{city.name}</span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => setShowCitySelector(false)}
+                  className="w-full px-3 py-2 text-center text-white/60 hover:text-white/80 transition-colors text-sm font-inter"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Reset Button */}
-          {(recommendations || text || imageFile) && (
+          {(recommendations || text || imageFile || selectedCity) && (
             <button
               onClick={handleReset}
               className="w-full py-3 bg-white/10 border border-white/20 rounded-full text-white hover:bg-white/20 transition-colors font-inter font-medium"
@@ -249,7 +352,7 @@ export default function HomePage() {
             <div className="text-center mb-4">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full">
                 <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
-                <span className="text-white/80 font-inter">Encontrando tu vibe...</span>
+                <span className="text-white/80 font-inter">Buscando en {selectedCity?.name}...</span>
               </div>
             </div>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -265,7 +368,7 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-2">
                 <span className="text-base">{selectedCategory?.emoji}</span>
                 <span className="text-white/80 font-inter">
-                  {selectedCategory?.name} • {recommendations.recommendations.length} lugares
+                  {selectedCategory?.name} en {selectedCity?.name} • {recommendations.recommendations.length} lugares
                 </span>
               </div>
               {/* Source indicator */}

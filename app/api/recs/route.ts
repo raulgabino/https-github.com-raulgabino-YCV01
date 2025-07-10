@@ -117,142 +117,146 @@ async function searchWithExa(
   }
 
   try {
-    // Get semantic search modifier
-    const baseModifier = SEARCH_MODIFIERS[category]?.[vibe] || `${category} ${vibe}`
+    // Build more specific search queries for real results
+    const locationQueries = [
+      `${category} ${city} México`,
+      `best ${category} in ${city}`,
+      `${city} ${category} recommendations`,
+      `where to ${category === "restaurants" ? "eat" : category === "bares" ? "drink" : "go"} in ${city}`,
+    ]
 
-    // Build enhanced search query
-    const searchQuery = customInput ? `${baseModifier} ${customInput} in ${city}` : `${baseModifier} in ${city}`
+    // Try multiple search strategies
+    const allResults: any[] = []
 
-    console.log(`🔍 Searching with Exa.ai: "${searchQuery}"`)
+    for (const query of locationQueries.slice(0, 2)) {
+      // Limit to 2 queries to avoid rate limits
+      try {
+        console.log(`🔍 Searching Exa.ai: "${query}"`)
 
-    // Search with Exa.ai
-    const searchResults = await exa.searchAndContents(searchQuery, {
-      type: "auto",
-      numResults: 8,
-      text: true,
-      livecrawl: "preferred",
-      useAutoprompt: true,
-      category:
-        category === "restaurants"
-          ? "dining"
-          : category === "cafeterias"
-            ? "dining"
-            : category === "bares"
-              ? "nightlife"
-              : category === "hoteles"
-                ? "accommodation"
-                : category === "recreacion"
-                  ? "entertainment"
-                  : category === "moda"
-                    ? "shopping"
-                    : "",
-    })
+        const searchResults = await exa.searchAndContents(query, {
+          type: "neural", // Use neural search for better semantic understanding
+          numResults: 6,
+          text: true,
+          livecrawl: "always", // Force live crawling for fresh results
+          useAutoprompt: false, // Disable autoprompt to use our exact query
+          startPublishedDate: "2020-01-01", // Only recent content
+          excludeDomains: ["wikipedia.org", "facebook.com", "instagram.com"], // Exclude generic sites
+          includeDomains: ["tripadvisor.com", "yelp.com", "google.com", "foursquare.com", "zomato.com"], // Include review sites
+        })
 
-    if (!searchResults.results || searchResults.results.length === 0) {
-      console.log("No results from Exa.ai")
+        if (searchResults.results && searchResults.results.length > 0) {
+          allResults.push(...searchResults.results)
+        }
+      } catch (queryError) {
+        console.error(`Query failed: ${query}`, queryError)
+        continue
+      }
+    }
+
+    if (allResults.length === 0) {
+      console.log("No results from Exa.ai searches")
       return []
     }
 
-    // Process results with OpenAI for structured data
+    // Deduplicate and process results
+    const uniqueResults = deduplicateResults(allResults).slice(0, 4)
+
+    console.log(`📊 Found ${uniqueResults.length} unique results from Exa.ai`)
+
+    // Process with more specific prompts
     const processedResults = await Promise.all(
-      deduplicateResults(searchResults.results)
-        .slice(0, 5)
-        .map(async (result: any) => {
-          try {
-            if (!openai) {
-              throw new Error("OpenAI not available for processing")
-            }
+      uniqueResults.map(async (result: any) => {
+        try {
+          if (!openai) {
+            throw new Error("OpenAI not available for processing")
+          }
 
-            const processingPrompt = `
-Extract business information from this content about a ${category} place in ${city}:
+          // More specific processing prompt
+          const processingPrompt = `
+You are extracting real business information from this web content about places in ${city}:
 
-Title: ${result.title}
+TITLE: ${result.title}
 URL: ${result.url}
-Content: ${result.text?.substring(0, 1000) || "No content available"}
+CONTENT: ${result.text?.substring(0, 1500) || "No content available"}
 
-Return ONLY a JSON object with this exact structure:
+Extract REAL business information and return ONLY valid JSON:
 {
-  "name": "Business name",
-  "address": "Full address in ${city}",
+  "name": "Exact business name from content",
+  "address": "Real street address if mentioned, otherwise '${city}, México'",
   "rating": 4.2,
-  "description": "Why this place fits ${vibe} vibe (max 25 words)",
+  "description": "Real description from content (max 30 words)",
   "type": "${category}",
   "priceRange": "$" | "$$" | "$$$" | "$$$$",
-  "hours": "Operating hours or 'Hours vary'",
-  "phoneNumber": "Phone number or empty string",
-  "website": "Website URL or empty string"
+  "hours": "Real hours if mentioned, otherwise 'Ver horarios'",
+  "phoneNumber": "Real phone if found, otherwise ''",
+  "website": "${result.url}"
 }
 
-If information is not available, use reasonable defaults. Make the description engaging and relevant to ${vibe} mood.
+IMPORTANT: 
+- Use REAL information from the content
+- If rating not found, estimate based on reviews mentioned
+- Make description specific to what's actually mentioned
+- Don't invent information not in the content
 `
 
-            const response = await openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages: [
-                {
-                  role: "system",
-                  content: "You are a local business data extractor. Return only valid JSON, no additional text.",
-                },
-                {
-                  role: "user",
-                  content: processingPrompt,
-                },
-              ],
-              max_tokens: 300,
-              temperature: 0.3,
-            })
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Extract real business data from web content. Return only valid JSON with actual information found in the content.",
+              },
+              {
+                role: "user",
+                content: processingPrompt,
+              },
+            ],
+            max_tokens: 400,
+            temperature: 0.1, // Lower temperature for more factual responses
+          })
 
-            const content = response.choices[0]?.message?.content?.trim()
-            if (!content) {
-              throw new Error("No response from OpenAI")
-            }
+          const content = response.choices[0]?.message?.content?.trim()
+          if (!content) {
+            throw new Error("No response from OpenAI")
+          }
 
-            let businessData
-            try {
-              businessData = JSON.parse(content)
-            } catch (parseError) {
-              // Fallback if JSON parsing fails
-              businessData = {
-                name: result.title?.split(" - ")[0] || "Local Business",
-                address: `${city}, México`,
-                rating: 0,
-                description: result.text?.substring(0, 100) || "Local business",
-                type: category,
-                priceRange: "$$",
-                hours: "Hours vary",
-                phoneNumber: "",
-                website: result.url,
-              }
-            }
-
-            return {
-              ...businessData,
-              googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessData.name + " " + businessData.address)}`,
-              imageUrl: result.image || `https://source.unsplash.com/600x400/?${category},restaurant,${city}`,
-              source: "exa_ai",
-            }
-          } catch (error) {
-            console.error("Error processing result:", error)
-            // Fallback result
-            return {
-              name: result.title?.split(" - ")[0] || "Local Business",
+          let businessData
+          try {
+            businessData = JSON.parse(content)
+          } catch (parseError) {
+            console.error("JSON parse error:", parseError)
+            // Create fallback from actual result data
+            businessData = {
+              name: result.title?.split(" - ")[0]?.split(" | ")[0] || "Local Business",
               address: `${city}, México`,
               rating: 0,
-              description: result.text?.substring(0, 100) || "Discover this local gem",
+              description: result.text?.substring(0, 80) || "Local business in " + city,
               type: category,
               priceRange: "$$",
-              hours: "Hours vary",
+              hours: "Ver horarios",
               phoneNumber: "",
               website: result.url,
-              googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.title + " " + city)}`,
-              imageUrl: `https://source.unsplash.com/600x400/?${category},restaurant,${city}`,
-              source: "exa_ai",
             }
           }
-        }),
+
+          return {
+            ...businessData,
+            googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessData.name + " " + city)}`,
+            imageUrl: `https://source.unsplash.com/600x400/?${category},${city},restaurant`,
+            source: "exa_ai",
+          }
+        } catch (error) {
+          console.error("Error processing result:", error)
+          return null
+        }
+      }),
     )
 
-    return processedResults.filter((result) => result.name && result.name !== "Local Business")
+    const validResults = processedResults.filter((result) => result !== null && result.name !== "Local Business")
+    console.log(`✅ Processed ${validResults.length} valid results`)
+
+    return validResults
   } catch (error) {
     console.error("Exa.ai search error:", error)
     return []
@@ -333,6 +337,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const customInput = body.customInput || ""
 
     console.log(`🔍 Searching: ${category} | ${vibe} | ${city} | ${customInput}`)
+    console.log(`🔧 API Keys configured: OpenAI=${!!openai}, Exa=${!!exa}`)
+    console.log(`🌍 Search parameters: ${city} | ${category} | ${vibe}`)
 
     let processedRecs: ProcessedRec[] = []
 
